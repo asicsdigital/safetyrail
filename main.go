@@ -22,7 +22,6 @@ package main
 
 import (
 	"github.com/asicsdigital/safetyrail/cmd"
-	"github.com/asicsdigital/safetyrail/util"
 )
 
 func main() {

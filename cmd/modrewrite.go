@@ -23,7 +23,10 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/asicsdigital/safetyrail/util"
+
 	"github.com/spf13/cobra"
+	jww "github.com/spf13/jwalterweatherman"
 )
 
 // modrewriteCmd represents the modrewrite command
@@ -37,7 +40,21 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("modrewrite called")
+		jww.INFO.Println("modrewrite called")
+
+		var r util.XMLRoutingRules
+		infile := "/tmp/asics.com-root-redirects.xml"
+
+		err := r.Parse(infile)
+
+		if err != nil {
+			jww.ERROR.Panic(err)
+		}
+
+		for i := range r.RoutingRules {
+			rule := &r.RoutingRules[i]
+			fmt.Println(rule.ModRewrite())
+		}
 	},
 }
 
@@ -53,4 +70,5 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// modrewriteCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	modrewriteCmd.Flags().String("infile", "", "Path to XML rewrite rules")
 }
