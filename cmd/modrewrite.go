@@ -27,33 +27,43 @@ import (
 
 	"github.com/spf13/cobra"
 	jww "github.com/spf13/jwalterweatherman"
+	"github.com/spf13/viper"
 )
 
 // modrewriteCmd represents the modrewrite command
 var modrewriteCmd = &cobra.Command{
 	Use:   "modrewrite",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Reformat S3 website rewrite rules for mod_rewrite",
+	Long:  `Reformat S3 website rewrite rules for mod_rewrite.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		jww.INFO.Println("modrewrite called")
 
+		redirects := []string{}
+
 		var r util.XMLRoutingRules
-		infile := "/tmp/asics.com-root-redirects.xml"
+		infile := viper.GetString("infile")
 
-		err := r.Parse(infile)
+		if len(infile) > 0 {
+			err := r.Parse(infile)
 
-		if err != nil {
-			jww.ERROR.Panic(err)
+			if err != nil {
+				jww.ERROR.Panic(err)
+			}
+
+			for i := range r.RoutingRules {
+				rule := &r.RoutingRules[i]
+				redirects = append(redirects, rule.ModRewrite())
+			}
 		}
 
-		for i := range r.RoutingRules {
-			rule := &r.RoutingRules[i]
-			fmt.Println(rule.ModRewrite())
+		bucket := viper.GetString("bucket")
+
+		if len(bucket) > 0 {
+			redirects = append(redirects, util.GetS3Redirects(bucket, util.AwsInit())...)
+		}
+
+		for i := range redirects {
+			fmt.Println(redirects[i])
 		}
 	},
 }
@@ -70,5 +80,12 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// modrewriteCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+
+	viper.SetDefault("infile", "")
 	modrewriteCmd.Flags().String("infile", "", "Path to XML rewrite rules")
+	viper.BindPFlag("infile", modrewriteCmd.Flags().Lookup("infile"))
+
+	viper.SetDefault("bucket", "")
+	modrewriteCmd.Flags().String("bucket", "", "S3 bucket for redirect objects")
+	viper.BindPFlag("bucket", modrewriteCmd.Flags().Lookup("bucket"))
 }

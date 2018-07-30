@@ -2,7 +2,6 @@ package util
 
 import (
 	"encoding/xml"
-	"fmt"
 	"io/ioutil"
 
 	jww "github.com/spf13/jwalterweatherman"
@@ -59,5 +58,5 @@ func (r *XMLRoutingRule) ModRewrite() string {
 	hostname := r.Redirect.HostName
 	destPath := r.Redirect.ReplaceKeyPrefixWith
 
-	return fmt.Sprintf("^/%s(.*) %s://%s/%s$1 [R,L]", sourcePath, protocol, hostname, destPath)
+	return FmtModRewrite(sourcePath, protocol, hostname, destPath)
 }
